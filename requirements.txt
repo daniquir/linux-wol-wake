@@ -1,0 +1,8 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Werkzeug==3.0.6
+scapy==2.5.0
+wakeonlan==3.1.0
+requests==2.31.0
+gunicorn==20.1.0
+python-nmap==0.7.1

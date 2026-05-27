@@ -1,0 +1,18 @@
+services:
+  wol-app:
+    build: .
+    network_mode: host
+    # Required for ARP/nmap/scapy in host mode
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    volumes:
+      - ./devices.db:/app/devices.db
+      - ./.secret_key:/app/.secret_key
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
+    # Do not expose port 5055 to the internet without a TLS proxy (nginx/traefik).
+    # With HTTPS on the proxy: SESSION_COOKIE_SECURE=true in .env

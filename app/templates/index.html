@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WoL Manager Pro - Dark Mode</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155',
+                            text: '#f1f5f9',
+                            muted: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-dark-bg text-dark-text font-sans leading-normal tracking-normal min-h-screen">
+    <nav class="bg-dark-card border-b border-dark-border shadow-lg mb-8 sticky top-0 z-30">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a class="text-blue-500 text-xl font-bold flex items-center" href="#">
+                <i class="fas fa-network-wired mr-3"></i> WoL Manager Pro
+            </a>
+            <div class="flex items-center gap-4 text-sm text-dark-muted">
+                <span id="scan-indicator" class="hidden"><i class="fas fa-circle-notch fa-spin mr-2"></i>Scanning...</span>
+                <span id="network-range-info">Detecting network...</span>
+                <a href="/logout"
+                   class="flex items-center gap-1.5 text-xs text-dark-muted hover:text-red-400 transition border border-dark-border hover:border-red-500/40 px-3 py-1.5 rounded-lg"
+                   title="Sign out">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="hidden sm:inline">Sign out</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 pb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Sidebar / Stats -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-dark-card rounded-xl border border-dark-border p-6 shadow-sm">
+                    <h5 class="text-sm font-bold text-dark-muted uppercase mb-4 tracking-wider">Actions</h5>
+                    <div class="grid grid-cols-1 gap-3">
+                        <button id="scan-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+                            <i class="fas fa-search mr-2"></i> Scan Network
+                        </button>
+                        <button id="add-manual-btn" class="w-full bg-dark-bg hover:bg-slate-800 text-dark-text border border-dark-border font-bold py-2.5 px-4 rounded-lg transition duration-200 flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i> Add Manually
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card rounded-xl border border-dark-border p-6 shadow-sm">
+                    <h5 class="text-sm font-bold text-dark-muted uppercase mb-4 tracking-wider">Summary</h5>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-dark-muted">Total devices:</span>
+                            <span id="stat-total" class="font-bold text-white">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-dark-muted">Online:</span>
+                            <span id="stat-online" class="font-bold text-green-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-dark-muted">WoL enabled:</span>
+                            <span id="stat-wol" class="font-bold text-blue-400">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-dark-card rounded-xl border border-dark-border p-6 shadow-sm">
+                    <h6 class="text-xs font-bold text-dark-muted uppercase tracking-wider mb-2">Scan status</h6>
+                    <div id="scan-status" class="text-lg font-bold text-blue-500">Ready</div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-3">
+                <div id="devices-container" class="space-y-8">
+                    <div class="flex items-center justify-center h-64 text-dark-muted italic">
+                        Loading devices...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast-like notifications -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Modals -->
+    <!-- Manual Add Modal -->
+    <div id="manual-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-40 p-4">
+        <div class="bg-dark-card border border-dark-border rounded-xl shadow-2xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-6 text-white">New Device</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-dark-muted uppercase mb-1">IP address</label>
+                    <input type="text" id="manual-ip" placeholder="192.168.1.50" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-dark-muted uppercase mb-1">MAC address</label>
+                    <input type="text" id="manual-mac" placeholder="AA:BB:CC:DD:EE:FF" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-dark-muted uppercase mb-1">Alias / name</label>
+                    <input type="text" id="manual-alias-input" placeholder="My gaming PC" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-dark-muted uppercase mb-1">Category</label>
+                    <select id="manual-category" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="PC">PC / Desktop</option>
+                        <option value="Laptop">Laptop</option>
+                        <option value="Server">Server / NAS</option>
+                        <option value="Media">Media (TV, etc.)</option>
+                        <option value="Console">Console</option>
+                        <option value="Network">Network</option>
+                        <option value="Mobile">Mobile</option>
+                        <option value="Tablet">Tablet</option>
+                        <option value="Printer">Printer</option>
+                        <option value="Camera">Camera</option>
+                        <option value="IoT">IoT</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-8 flex gap-3">
+                <button id="cancel-manual" class="flex-1 py-2 rounded-lg text-dark-muted hover:bg-dark-bg transition">Cancel</button>
+                <button id="save-manual" class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Alias Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-40 p-4">
+        <div class="bg-dark-card border border-dark-border rounded-xl shadow-2xl p-6 max-w-sm w-full">
+            <h3 class="text-lg font-bold mb-4 text-white">Edit Device</h3>
+            <div class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-xs font-bold text-dark-muted uppercase mb-1">Custom alias / name</label>
+                    <input type="text" id="edit-alias" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-dark-muted uppercase mb-1">Category</label>
+                    <select id="edit-category" onchange="toggleOnvifFields(this.value)" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="PC">PC / Desktop</option>
+                        <option value="Laptop">Laptop</option>
+                        <option value="Server">Server / NAS</option>
+                        <option value="Media">Media (TV, etc.)</option>
+                        <option value="Console">Console</option>
+                        <option value="Network">Network</option>
+                        <option value="Mobile">Mobile</option>
+                        <option value="Tablet">Tablet</option>
+                        <option value="Printer">Printer</option>
+                        <option value="Camera">Camera</option>
+                        <option value="IoT">IoT</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <label class="flex items-center cursor-pointer gap-2">
+                        <input type="checkbox" id="edit-is-onvif" class="sr-only peer" onchange="toggleOnvifFields(document.getElementById('edit-category').value)">
+                        <div class="w-8 h-4 bg-slate-700 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4 relative"></div>
+                        <span class="text-xs font-bold text-dark-muted uppercase">ONVIF camera</span>
+                    </label>
+                </div>
+                <div id="onvif-settings" class="hidden space-y-4 pt-4 border-t border-dark-border/50">
+                    <h4 class="text-xs font-bold text-blue-500 uppercase tracking-widest">ONVIF credentials</h4>
+                    <div>
+                        <label class="block text-xs font-bold text-dark-muted uppercase mb-1">Username</label>
+                        <input type="text" id="edit-onvif-user" placeholder="admin" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-dark-muted uppercase mb-1">Password</label>
+                        <input type="password" id="edit-onvif-pass" placeholder="********" class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex gap-3">
+                <button id="cancel-edit" class="flex-1 py-2 rounded-lg text-dark-muted hover:bg-dark-bg transition">Close</button>
+                <button id="save-edit" class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Grid Modal -->
+    <div id="camera-grid-modal" class="fixed inset-0 bg-black/95 hidden flex-col z-50">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-dark-border bg-dark-card/80 backdrop-blur-sm flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-th-large text-green-400"></i>
+                <span class="font-bold text-white text-sm">Camera grid</span>
+                <span id="grid-camera-count" class="text-[10px] text-dark-muted bg-dark-border px-2 py-0.5 rounded-full"></span>
+            </div>
+            <button id="camera-grid-close" class="text-dark-muted hover:text-white transition text-xl leading-none">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="camera-grid-container"
+             class="flex-1 overflow-y-auto p-4"
+             style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); grid-auto-rows:min-content; gap:12px;">
+            <!-- Camera cells added dynamically -->
+        </div>
+    </div>
+
+    <!-- Camera Viewer Modal -->
+    <div id="camera-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-dark-card border border-dark-border rounded-xl shadow-2xl w-full max-w-4xl">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-dark-border">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-video text-green-400"></i>
+                    <span id="camera-modal-title" class="font-bold text-white text-sm">Camera</span>
+                    <span id="camera-modal-status" class="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">Connecting...</span>
+                    <span id="camera-ptz-badge" class="hidden text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded border border-purple-500/30"><i class="fas fa-arrows-alt mr-1"></i>PTZ</span>
+                </div>
+                <button id="camera-modal-close" class="text-dark-muted hover:text-white transition text-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="flex flex-col lg:flex-row">
+                <!-- Stream area -->
+                <div class="relative bg-black flex items-center justify-center flex-1" style="min-height:360px">
+                    <div id="camera-loading" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-dark-muted">
+                        <i class="fas fa-circle-notch fa-spin text-2xl text-blue-400"></i>
+                        <p id="camera-loading-text" class="text-xs">Starting...</p>
+                    </div>
+                    <div id="camera-error" class="absolute inset-0 hidden flex-col items-center justify-center gap-2 overflow-y-auto py-4 px-6">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-400 flex-shrink-0"></i>
+                        <p id="camera-error-msg" class="text-xs text-center text-red-400">Connection error</p>
+                        <!-- Diagnostic accordion -->
+                        <div id="camera-diag-wrap" class="hidden w-full max-w-md">
+                            <button id="camera-diag-toggle" class="w-full text-[10px] text-dark-muted hover:text-white flex items-center gap-1 justify-center mt-1">
+                                <i class="fas fa-chevron-down" id="camera-diag-chevron"></i> Show diagnostics
+                            </button>
+                            <div id="camera-diag-body" class="hidden mt-2 bg-black/40 rounded-lg p-3 text-[10px] font-mono text-slate-400 space-y-1 max-h-32 overflow-y-auto"></div>
+                        </div>
+                        <!-- 401 credentials hint -->
+                        <div id="camera-401-hint" class="hidden w-full max-w-md bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 text-center">
+                            <p class="text-[11px] text-amber-400 font-bold mb-2"><i class="fas fa-key mr-1"></i>Access denied — camera requires credentials</p>
+                            <button id="camera-cred-btn" class="text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-1.5 rounded-lg transition">
+                                <i class="fas fa-user-cog mr-1"></i>Set username and password
+                            </button>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <button id="camera-retry-btn" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg transition">Retry</button>
+                            <button id="camera-manual-btn" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-4 py-1.5 rounded-lg transition">Manual URL</button>
+                        </div>
+                        <!-- Manual URL input (hidden by default) -->
+                        <div id="camera-manual-wrap" class="hidden w-full max-w-md mt-2 space-y-2">
+                            <p class="text-[10px] text-dark-muted">Enter your camera RTSP URL:</p>
+                            <div class="flex gap-2">
+                                <input id="camera-manual-url" type="text" placeholder="rtsp://user:pass@192.168.1.x:554/stream1"
+                                       class="flex-1 text-[10px] bg-dark-bg border border-dark-border rounded px-2 py-1.5 text-white font-mono focus:ring-1 focus:ring-blue-500 outline-none">
+                                <button id="camera-manual-test" class="text-[10px] bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded transition flex-shrink-0">
+                                    <i class="fas fa-play mr-1"></i>Test
+                                </button>
+                            </div>
+                            <p id="camera-manual-status" class="text-[10px] text-dark-muted hidden"></p>
+                        </div>
+                    </div>
+                    <img id="camera-stream-img"
+                         class="hidden w-full rounded-b-none"
+                         alt="Camera stream"
+                         style="max-height:480px;object-fit:contain">
+                </div>
+
+                <!-- PTZ Controls Panel -->
+                <div id="camera-ptz-panel" class="hidden lg:w-48 bg-dark-card border-l border-dark-border p-4 flex flex-col">
+                    <h4 class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fas fa-arrows-alt"></i> PTZ controls
+                    </h4>
+                    
+                    <!-- Directional Pad -->
+                    <div class="grid grid-cols-3 gap-1 mb-4">
+                        <div></div>
+                        <button id="ptz-up" class="ptz-btn bg-slate-700 hover:bg-purple-600 text-white p-2 rounded transition flex items-center justify-center" title="Up">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <div></div>
+                        <button id="ptz-left" class="ptz-btn bg-slate-700 hover:bg-purple-600 text-white p-2 rounded transition flex items-center justify-center" title="Left">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button id="ptz-home" class="ptz-btn bg-slate-600 hover:bg-slate-500 text-white p-2 rounded transition flex items-center justify-center text-xs" title="Stop">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                        <button id="ptz-right" class="ptz-btn bg-slate-700 hover:bg-purple-600 text-white p-2 rounded transition flex items-center justify-center" title="Right">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <div></div>
+                        <button id="ptz-down" class="ptz-btn bg-slate-700 hover:bg-purple-600 text-white p-2 rounded transition flex items-center justify-center" title="Down">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div></div>
+                    </div>
+
+                    <!-- Zoom Controls -->
+                    <div class="flex gap-2 mb-4">
+                        <button id="ptz-zoom-out" class="ptz-btn flex-1 bg-slate-700 hover:bg-blue-600 text-white py-2 rounded transition flex items-center justify-center gap-1" title="Zoom out">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button id="ptz-zoom-in" class="ptz-btn flex-1 bg-slate-700 hover:bg-blue-600 text-white py-2 rounded transition flex items-center justify-center gap-1" title="Zoom in">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                    </div>
+
+                    <!-- Speed Control -->
+                    <div class="mt-auto">
+                        <label class="text-[10px] text-dark-muted uppercase font-bold mb-1 block">Speed</label>
+                        <input id="ptz-speed" type="range" min="1" max="10" value="5" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-[9px] text-dark-muted mt-1">
+                            <span>Slow</span>
+                            <span id="ptz-speed-val">50%</span>
+                            <span>Fast</span>
+                        </div>
+                    </div>
+
+                    <p id="ptz-status" class="text-[10px] text-dark-muted mt-3 text-center hidden"></p>
+                </div>
+            </div>
+
+            <!-- RTSP info bar -->
+            <div class="px-5 py-3 border-t border-dark-border/50 flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-dark-muted uppercase font-bold tracking-wider">URL RTSP</span>
+                    <span id="camera-rtsp-url" class="text-[10px] text-blue-300 font-mono truncate flex-1">—</span>
+                    <button id="camera-copy-rtsp" title="Copy RTSP URL"
+                            class="text-dark-muted hover:text-white text-xs transition flex-shrink-0">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <p class="text-[9px] text-dark-muted italic">Paste this URL into VLC or any RTSP-compatible player.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
