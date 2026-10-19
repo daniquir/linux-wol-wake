@@ -34,6 +34,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() in ('1', 'true', 'yes')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_PATH'] = '/'
+# Host-only cookie (no Domain): works for both IP:port and hostname:port independently.
+app.config['SESSION_COOKIE_DOMAIN'] = None
 app.config['SESSION_COOKIE_NAME'] = session_cookie_name(app.config['SESSION_COOKIE_SECURE'])
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max request size
 
