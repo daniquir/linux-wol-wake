@@ -12,7 +12,7 @@ from .models import db, Device
 from .scanner import scan_network, get_local_network
 from .wol import wake_device
 from .onvif_helper import get_rtsp_candidates, move_camera, check_ptz_support
-from .security import validate_scan_range, validate_rtsp_url
+from .security import session_cookie_name, validate_scan_range, validate_rtsp_url
 
 app = Flask(__name__)
 
@@ -30,11 +30,14 @@ def _load_or_create_secret_key():
 
 app.config['SECRET_KEY'] = _load_or_create_secret_key()
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
-# Secure cookies on HTTP local only when enabled (use true behind TLS proxy)
+# Secure cookies when behind TLS proxy. On plain HTTP (LAN), Secure must be false.
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() in ('1', 'true', 'yes')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_NAME'] = '__Host-session'
+app.config['SESSION_COOKIE_PATH'] = '/'
+# Host-only cookie (no Domain): works for both IP:port and hostname:port independently.
+app.config['SESSION_COOKIE_DOMAIN'] = None
+app.config['SESSION_COOKIE_NAME'] = session_cookie_name(app.config['SESSION_COOKIE_SECURE'])
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max request size
 
 # ── Login credentials (env vars APP_USER / APP_PASSWORD) ────────────────────
