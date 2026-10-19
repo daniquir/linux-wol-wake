@@ -88,6 +88,17 @@ export APP_USER=admin APP_PASSWORD='YourSecurePassword123!'
 python -m app.main
 ```
 
+## Continuous deploy (kanda-server)
+
+Lab CD uses **Jenkins** on the LAN (`LINUX-WOL-WAKE-CD`), not GitHub Actions:
+
+1. Poll SCM on `main` (public clone).
+2. `docker build` → `kanda/linux-wol-wake:latest`.
+3. `/docker/composes/linux-wol-wake/up.sh --force-recreate` (secrets from Vault).
+4. Smoke check on `http://127.0.0.1:5055/login`.
+
+Persistent inventory (`devices.db`) lives only on the host volume and is never rebuilt by the pipeline. See Memory-Stack `servicios/linux-wol-wake.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
