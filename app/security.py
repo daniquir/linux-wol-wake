@@ -3,6 +3,14 @@ import ipaddress
 from urllib.parse import urlparse
 
 
+def session_cookie_name(secure: bool) -> str:
+    """Cookie name for Flask sessions.
+
+    ``__Host-`` requires Secure; browsers drop it on plain HTTP.
+    """
+    return '__Host-session' if secure else 'wol_session'
+
+
 def escape_xml(text):
     if text is None:
         return ''
